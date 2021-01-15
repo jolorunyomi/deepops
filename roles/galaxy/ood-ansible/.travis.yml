@@ -1,0 +1,27 @@
+---
+language: python
+python: "3.7"
+
+branches:
+  only:
+  - master
+  - /^v\d/
+
+notifications:
+  email:
+    on_success: never
+    on_failure: always
+
+services:
+- docker
+
+install:
+- pip install ansible
+
+script:
+- tests/check_syntax.sh
+- tests/start_containers.sh
+- tests/run_playbook.sh --tags="deps" -i tests/inventory-src
+- travis_wait 45 tests/run_playbook.sh --tags="build" -i tests/inventory-src
+- tests/run_playbook.sh --tags="install,configure" -i tests/inventory-src
+- tests/run_playbook.sh -i tests/inventory-rpm --extra-vars "@tests/extra_vars.json"

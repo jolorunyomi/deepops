@@ -1,0 +1,46 @@
+- name: include distribution variables
+  include_vars: "{{ ansible_distribution }}.yml"
+  tags: [ 'always' ]
+
+- name: include scl related overrides
+  include_vars: "{{ ansible_distribution }}-scl.yml"
+  when: not install_from_src
+  tags: [ 'always' ]
+
+- include: deps.yml
+  become: true
+  tags: [ 'deps' ]
+  when: install_from_src
+
+- include: build.yml
+  tags: [ 'build' ]
+  when: install_from_src
+
+- include: install-src.yml
+  become: true
+  tags: [ 'install' ]
+  when: install_from_src
+
+- include: install-rpm.yml
+  become: true
+  tags: [ 'install' ]
+  when: not install_from_src
+
+- include: configure.yml
+  become: true
+  tags: [ 'configure' ]
+
+- include: clusters.yml
+  when: clusters is defined
+  tags: [ 'configure' ]
+
+- include: install-apps.yml
+  when: ood_install_apps is defined
+  tags: [ 'install' ]
+
+- include: apps.yml
+  when: ood_apps is defined
+  tags: [ 'configure' ]
+
+- include: site-specific.yml
+  tags: [ 'configure', 'site' ]

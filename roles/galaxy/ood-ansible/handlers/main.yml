@@ -1,0 +1,34 @@
+---
+- name: restart apache in systemd
+  systemd:
+    name: "{{ apache_service_name }}"
+    state: restarted
+    enabled: "{{ apache_service_enabled }}"
+  become: true
+  when: _ssh_local_connection
+  listen: "restart apache httpd"
+
+- name: restart apache in container
+  shell: "{{ container_apache_restart_cmd }}"
+  become: true
+  when: _container_connection
+  listen: "restart apache httpd"
+
+- name: update nginx stage
+  shell: "{{ ood_base_dir }}/nginx_stage/sbin/update_nginx_stage"
+  become: true
+
+- name: update ood portal
+  shell: "{{ ood_base_dir }}/ood-portal-generator/sbin/update_ood_portal --force"
+  when: ood_portal_generator
+  ignore_errors: yes
+  become: true
+  notify:
+    - restart apache httpd
+    - restart httpd htcacheclean
+
+- name: restart httpd htcacheclean
+  systemd:
+    name: httpd24-htcacheclean
+    state: restarted
+  become: true
